@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  VENDOR
+}
+
+enum BidStatus {
+  SUBMITTED
+  EVALUATED
+}
+
+enum TenderStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum TenderCategory {
+  GOODS              // ዕቃዎች
+  SERVICES           // አገልግሎቶች
+  WORKS              // ስራዎች (Construction)
+  CONSULTANCY        // አማካሪነት
+  INFRASTRUCTURE     // መሠረተ ልማት
+}
+
+enum EthiopianRegion {
+  ADDIS_ABABA        // አዲስ አበባ
+  AFAR               // ዓፋር
+  AMHARA             // አማራ
+  BENISHANGUL_GUMUZ  // ቤንሻንጉል ጉሙዝ
+  DIRE_DAWA          // ድሬዳዋ
+  GAMBELA            // ጋምቤላ
+  HARARI             // ሐረሪ
+  OROMIA             // ኦሮሚያ
+  SIDAMA             // ሲዳማ
+  SOMALI             // ሶማሊ
+  SOUTHERN           // ደቡብ
+  TIGRAY             // ትግራይ
+  SOUTHWEST          // ደቡብ ምዕራብ
+}
+
+model User {
+  id                    String   @id @default(uuid())
+  email                 String   @unique
+  name                  String
+  passwordHash          String
+  role                  Role     @default(VENDOR)
+  createdAt             DateTime @default(now())
+  
+  // Ethiopian Business Information
+  businessLicenseNumber String?
+  tinNumber             String?  // Tax Identification Number
+  licenseFilePath       String?
+
+  bids                  Bid[]
+}
+
+model Tender {
+  id               String           @id @default(uuid())
+  title            String
+  description      String?
+  deadline         DateTime
+  status           TenderStatus     @default(OPEN)
+  createdAt        DateTime         @default(now())
+  
+  // Ethiopian Procurement Fields
+  category         TenderCategory?
+  region           EthiopianRegion?
+  estimatedValue   Decimal?         @db.Decimal(15, 2)  // Up to 999,999,999,999.99 ETB
+  bidSecurityRate  Decimal?         @db.Decimal(5, 2)   // Up to 100.00%
+  openingDate      DateTime?        // Public bid opening ceremony
+  openingLocation  String?
+
+  bids             Bid[]
+  
+  @@index([status])
+  @@index([category])
+  @@index([region])
+  @@index([deadline])
+  @@index([createdAt])
+}
+
+model Bid {
+  id                  String    @id @default(uuid())
+  tenderId            String
+  vendorId            String
+  filePath            String
+  status              BidStatus @default(SUBMITTED)
+  createdAt           DateTime  @default(now())
+  
+  // Ethiopian Bid Security
+  bidSecurityAmount   Decimal?  @db.Decimal(15, 2)  // Calculated from tender's bidSecurityRate
+  bidSecurityFilePath String?   // Bank guarantee document
+
+  tender              Tender    @relation(fields: [tenderId], references: [id])
+  vendor              User      @relation(fields: [vendorId], references: [id])
+  evaluation          Evaluation?
+
+  @@unique([tenderId, vendorId])
+  @@index([tenderId])
+  @@index([vendorId])
+  @@index([status])
+}
+
+model Evaluation {
+  id              String   @id @default(uuid())
+  bidId           String   @unique
+  score           Int      // Total score (out of 100)
+  remarks         String?
+  createdAt       DateTime @default(now())
+  
+  // Ethiopian 70/30 Evaluation Split
+  technicalScore  Decimal? @db.Decimal(5, 2)  // Out of 70 points
+  financialScore  Decimal? @db.Decimal(5, 2)  // Out of 30 points
+  
+  // Detailed Technical Criteria
+  experienceScore   Decimal? @db.Decimal(5, 2)  // Company experience
+  capacityScore     Decimal? @db.Decimal(5, 2)  // Technical capacity
+  methodologyScore  Decimal? @db.Decimal(5, 2)  // Proposed methodology
+  
+  // Financial
+  priceScore        Decimal? @db.Decimal(5, 2)  // Price competitiveness
+
+  bid             Bid      @relation(fields: [bidId], references: [id])
+  
+  @@index([bidId])
+}
