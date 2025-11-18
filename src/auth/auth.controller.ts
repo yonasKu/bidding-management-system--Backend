@@ -31,7 +31,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async me(@Req() req: Request) {
-    return (req as any).user
+    const payloadUser = (req as any).user as { id: string }
+    // Fetch fresh user from DB to ensure latest role
+    return this.auth.getUserById(payloadUser.id)
   }
 
   @Post('logout')

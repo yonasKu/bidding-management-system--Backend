@@ -8,8 +8,7 @@ import { TendersModule } from './tenders/tenders.module';
 import { BidsModule } from './bids/bids.module';
 import { EvaluationsModule } from './evaluations/evaluations.module';
 import { AdminModule } from './admin/admin.module';
-import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from './auth/roles.guard';
+ 
 
 @Module({
   imports: [
@@ -24,7 +23,6 @@ import { RolesGuard } from './auth/roles.guard';
   controllers: [AppController],
   providers: [
     AppService,
-    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

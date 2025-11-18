@@ -31,4 +31,12 @@ export class AuthService {
     const token = await this.jwt.signAsync({ sub: user.id, email: user.email, role: user.role })
     return { token, user: { id: user.id, email: user.email, role: user.role } }
   }
+
+  // Ensure the freshest role is returned by /auth/me (DB source of truth)
+  async getUserById(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, email: true, role: true },
+    })
+  }
 }

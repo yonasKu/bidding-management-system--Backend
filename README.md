@@ -1,98 +1,393 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Backend - Ethiopian Bidding System API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+NestJS-based REST API for the Ethiopian procurement and bidding management system.
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Production-ready backend API built with NestJS, PostgreSQL, and Prisma ORM. Implements Ethiopian procurement standards and Directive No. 430/2018 compliance.
 
-## Project setup
+## 📁 Folder Structure
 
-```bash
-$ npm install
+```
+backend/
+├── prisma/              # Database schema and migrations
+│   ├── schema.prisma    # Prisma schema (PostgreSQL)
+│   └── migrations/      # Database migration files
+├── src/
+│   ├── admin/           # Admin dashboard endpoints
+│   ├── auth/            # Authentication (JWT, guards, strategies)
+│   ├── bids/            # Bid management (submit, list, download)
+│   ├── evaluations/     # Bid evaluation system
+│   ├── prisma/          # Prisma service
+│   ├── tenders/         # Tender management (CRUD, status)
+│   ├── app.module.ts    # Root module
+│   └── main.ts          # Application entry point
+├── uploads/             # Uploaded bid PDFs
+├── Dockerfile           # Docker container configuration
+├── docker-compose.yml   # Full stack orchestration
+└── .env                 # Environment variables
+
 ```
 
-## Compile and run the project
+## 🚀 Features
 
+### Core API Endpoints
+
+#### Authentication
+- `POST /auth/register` - Register new user (vendor/admin)
+- `POST /auth/login` - Login with JWT token
+- `POST /auth/logout` - Logout and clear cookies
+- `GET /auth/me` - Get current user profile
+
+#### Tenders
+- `GET /tenders` - List all tenders (with filters)
+- `GET /tenders/:id` - Get tender details
+- `POST /tenders` - Create new tender (admin only)
+- `PATCH /tenders/:id` - Update tender (admin only)
+- `POST /tenders/:id/cancel` - Cancel tender (admin only)
+
+#### Bids
+- `GET /bids` - List my bids (vendor)
+- `GET /bids/tender/:id` - List bids for tender (admin)
+- `POST /bids` - Submit bid with PDF
+- `GET /bids/:id/download` - Download bid PDF
+
+#### Evaluations
+- `POST /evaluations` - Create evaluation (admin only)
+- `GET /evaluations/bid/:id` - Get evaluation for bid
+
+#### Admin
+- `GET /admin/stats` - Dashboard statistics
+
+### Ethiopian Features
+
+#### 1. **30-Day Deadline Validation**
+- Enforces minimum 30-day bid period
+- References Ethiopian Procurement Directive No. 430/2018
+- Location: `src/tenders/tenders.service.ts`
+
+#### 2. **Tender Categories**
+- GOODS (ዕቃዎች)
+- SERVICES (አገልግሎቶች)
+- WORKS (ስራዎች)
+- CONSULTANCY (አማካሪነት)
+- INFRASTRUCTURE (መሠረተ ልማት)
+
+#### 3. **Ethiopian Regions**
+- All 13 regions + 2 city administrations
+- Stored as enum in database
+- Location: `prisma/schema.prisma`
+
+#### 4. **Bid Security (2-5%)**
+- Tracks bid security amount
+- Bank guarantee document upload
+- Calculated from tender's bidSecurityRate
+
+#### 5. **70/30 Evaluation Split**
+- Technical Score: 70 points
+- Financial Score: 30 points
+- Detailed criteria tracking
+- Location: `src/evaluations/`
+
+#### 6. **Public Bid Opening**
+- Opening date/time tracking
+- Location field
+- Transparency requirement
+
+### Security Features
+
+- ✅ **JWT Authentication** - httpOnly cookies
+- ✅ **Role-Based Access Control** - Admin/Vendor roles
+- ✅ **Password Hashing** - bcrypt
+- ✅ **CORS Protection** - Configured for frontend
+- ✅ **Helmet** - Security headers
+- ✅ **Input Validation** - Zod schemas
+- ✅ **SQL Injection Prevention** - Prisma ORM
+
+## 🛠️ Setup
+
+### Prerequisites
+- Node.js 18+
+- PostgreSQL 14+
+- npm or yarn
+
+### 1. Install Dependencies
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
-
+### 2. Configure Environment
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
+# Edit .env with your settings
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+**Required Environment Variables**:
+```env
+DATABASE_URL="postgresql://user:pass@localhost:5432/bidding_db"
+JWT_SECRET="your-secret-key"
+JWT_EXPIRES_IN="7d"
+COOKIE_SECURE="false"  # true in production
+FILE_UPLOAD_DIR="./uploads"
+MAX_UPLOAD_MB="10"
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 3. Database Setup
+```bash
+# Run migrations
+npx prisma migrate dev
 
-## Resources
+# Generate Prisma Client
+npx prisma generate
 
-Check out a few resources that may come in handy when working with NestJS:
+# (Optional) Seed data
+npm run seed
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 4. Start Development Server
+```bash
+# Watch mode (auto-reload)
+npm run start:dev
 
-## Support
+# Regular mode
+npm run start
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Production mode
+npm run start:prod
+```
 
-## Stay in touch
+API runs on: **http://localhost:4000**
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 🐳 Docker Deployment
 
-## License
+### Using Docker Compose (Recommended)
+```bash
+# Start PostgreSQL + Backend + Frontend
+docker-compose up -d
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# View logs
+docker-compose logs -f backend
+
+# Stop services
+docker-compose down
+```
+
+### Build Docker Image
+```bash
+# Build
+docker build -t bidding-backend .
+
+# Run
+docker run -p 4000:4000 --env-file .env bidding-backend
+```
+
+## 📊 Database
+
+### Technology
+- **PostgreSQL 14+** - Production database
+- **Prisma ORM** - Type-safe database access
+- **Migrations** - Version-controlled schema changes
+
+### Models
+1. **User** - Accounts with Ethiopian business info
+2. **Tender** - Procurement tenders with categories/regions
+3. **Bid** - Vendor submissions with security
+4. **Evaluation** - 70/30 scoring system
+
+### Key Features
+- UUID primary keys
+- Indexed queries (10 indexes)
+- Decimal precision for Ethiopian Birr
+- Enum types for categories/regions/status
+
+### Prisma Commands
+```bash
+# Create migration
+npx prisma migrate dev --name description
+
+# Apply migrations (production)
+npx prisma migrate deploy
+
+# Reset database (CAUTION: deletes data)
+npx prisma migrate reset
+
+# Open Prisma Studio (GUI)
+npx prisma studio
+```
+
+## 🧪 Testing
+
+```bash
+# Unit tests
+npm run test
+
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+
+# Watch mode
+npm run test:watch
+```
+
+## 📝 API Documentation
+
+### Health Check
+```bash
+GET /health
+Response: { status: 'ok', database: 'connected', timestamp: '...' }
+```
+
+### Authentication Flow
+1. Register: `POST /auth/register`
+2. Login: `POST /auth/login` → Returns JWT in httpOnly cookie
+3. Access protected routes with cookie
+4. Logout: `POST /auth/logout`
+
+### File Upload
+- **Endpoint**: `POST /bids`
+- **Field**: `file` (multipart/form-data)
+- **Allowed**: PDF only
+- **Max Size**: 10MB
+- **Storage**: `./uploads/`
+
+## 🔧 Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | Required |
+| `JWT_SECRET` | Secret key for JWT signing | Required |
+| `JWT_EXPIRES_IN` | Token expiration time | `7d` |
+| `COOKIE_SECURE` | Use secure cookies (HTTPS) | `false` |
+| `FILE_UPLOAD_DIR` | Upload directory path | `./uploads` |
+| `MAX_UPLOAD_MB` | Max file size in MB | `10` |
+| `PORT` | Server port | `4000` |
+| `NODE_ENV` | Environment | `development` |
+
+### CORS Configuration
+Edit `src/main.ts` to configure allowed origins:
+```typescript
+app.enableCors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+});
+```
+
+## 📦 Dependencies
+
+### Core
+- `@nestjs/core` - NestJS framework
+- `@nestjs/common` - Common utilities
+- `@prisma/client` - Database client
+- `prisma` - Database toolkit
+
+### Authentication
+- `@nestjs/jwt` - JWT implementation
+- `@nestjs/passport` - Authentication strategies
+- `bcrypt` - Password hashing
+
+### File Upload
+- `@nestjs/platform-express` - Express platform
+- `multer` - File upload middleware
+
+### Security
+- `helmet` - Security headers
+- `cookie-parser` - Cookie handling
+
+### Validation
+- `class-validator` - DTO validation
+- `class-transformer` - Object transformation
+
+## 🚀 Production Deployment
+
+### Option 1: Docker Compose
+```bash
+docker-compose up -d
+```
+
+### Option 2: Manual
+```bash
+# Build
+npm run build
+
+# Run migrations
+npx prisma migrate deploy
+
+# Start
+npm run start:prod
+```
+
+### Option 3: Cloud Platforms
+- **Heroku**: `git push heroku main`
+- **AWS**: Use Elastic Beanstalk or ECS
+- **DigitalOcean**: App Platform or Droplet
+
+See `../docs/Production-Deployment-Guide.md` for detailed instructions.
+
+## 📈 Performance
+
+### Optimizations
+- ✅ Database indexes on frequently queried fields
+- ✅ Connection pooling (Prisma)
+- ✅ Efficient queries (select specific fields)
+- ✅ Caching strategies ready
+
+### Monitoring
+```bash
+# Check health
+curl http://localhost:4000/health
+
+# View logs
+docker-compose logs -f backend
+
+# Database stats
+npx prisma studio
+```
+
+## 🐛 Troubleshooting
+
+### Database Connection Issues
+```bash
+# Test connection
+npx prisma db pull
+
+# Check PostgreSQL
+docker ps | grep postgres
+```
+
+### Migration Errors
+```bash
+# Reset database (CAUTION)
+npx prisma migrate reset
+
+# Force migration
+npx prisma migrate deploy --force
+```
+
+### Port Already in Use
+```bash
+# Windows
+netstat -ano | findstr :4000
+taskkill /PID <PID> /F
+
+# Change port in .env
+PORT=4001
+```
+
+## 📚 Resources
+
+- [NestJS Documentation](https://docs.nestjs.com)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [Ethiopian Procurement Directive](https://ppa.gov.et)
+
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+---
+
+**Built for Ethiopia 🇪🇹** - Compliant with Procurement Directive No. 430/2018
