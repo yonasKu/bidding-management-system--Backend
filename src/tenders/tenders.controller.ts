@@ -42,4 +42,26 @@ export class TendersController {
   cancel(@Param('id') id: string) {
     return this.svc.cancel(id)
   }
+
+  // Manually close an OPEN tender (ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Post(':id/close')
+  close(@Param('id') id: string) {
+    return this.svc.close(id)
+  }
+
+  // Award a bid as the winning bid for a tender (ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Post(':id/award')
+  award(@Param('id') id: string, @Body() body: { bidId: string }) {
+    return this.svc.award(id, body.bidId)
+  }
+
+  // Public results for a tender (evaluated bids + winner flag)
+  @Get(':id/results')
+  results(@Param('id') id: string) {
+    return this.svc.results(id)
+  }
 }

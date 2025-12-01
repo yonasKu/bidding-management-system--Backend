@@ -21,6 +21,7 @@ enum Role {
 enum BidStatus {
   SUBMITTED
   EVALUATED
+  AWARDED
 }
 
 enum TenderStatus {
@@ -76,7 +77,9 @@ model Tender {
   deadline         DateTime
   status           TenderStatus     @default(OPEN)
   createdAt        DateTime         @default(now())
-  
+  winningBidId     String?          @unique
+  awardedAt        DateTime?
+
   // Ethiopian Procurement Fields
   category         TenderCategory?
   region           EthiopianRegion?
@@ -86,6 +89,7 @@ model Tender {
   openingLocation  String?
 
   bids             Bid[]
+  winningBid       Bid?             @relation("WinningBid", fields: [winningBidId], references: [id])
   
   @@index([status])
   @@index([category])
@@ -107,6 +111,8 @@ model Bid {
   bidSecurityFilePath String?   // Bank guarantee document
 
   tender              Tender    @relation(fields: [tenderId], references: [id])
+  // Back-reference for Tender.winningBid relation
+  winningTender       Tender?   @relation("WinningBid")
   vendor              User      @relation(fields: [vendorId], references: [id])
   evaluation          Evaluation?
 

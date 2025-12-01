@@ -36,7 +36,27 @@ export class AuthService {
   async getUserById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true, role: true },
+      select: { id: true, email: true, role: true, name: true, businessLicenseNumber: true, tinNumber: true, licenseFilePath: true },
     })
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } })
+    if (!user) throw new UnauthorizedException('User not found')
+    const ok = await bcrypt.compare(currentPassword, user.passwordHash)
+    if (!ok) throw new UnauthorizedException('Current password is incorrect')
+    const passwordHash = await bcrypt.hash(newPassword, 10)
+    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } })
+    return { success: true }
+  }
+
+  async updateProfile(userId: string, input: { name?: string; businessLicenseNumber?: string | null; tinNumber?: string | null; licenseFilePath?: string | null }) {
+    const data: any = {}
+    if (input.name !== undefined) data.name = input.name
+    if (input.businessLicenseNumber !== undefined) data.businessLicenseNumber = input.businessLicenseNumber
+    if (input.tinNumber !== undefined) data.tinNumber = input.tinNumber
+    if (input.licenseFilePath !== undefined) data.licenseFilePath = input.licenseFilePath
+    const u = await this.prisma.user.update({ where: { id: userId }, data, select: { id: true, email: true, role: true } })
+    return u
   }
 }

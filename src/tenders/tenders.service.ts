@@ -97,4 +97,53 @@ export class TendersService {
     
     return this.prisma.tender.update({ where: { id }, data: { status: 'CANCELLED' } })
   }
+
+  async close(id: string) {
+    const t = await this.detail(id)
+    if (t.status !== 'OPEN') throw new BadRequestException('Cannot close non-open tender')
+    return this.prisma.tender.update({ where: { id }, data: { status: 'CLOSED' } })
+  }
+
+  async award(id: string, bidId: string) {
+    const t = await this.detail(id)
+    if (t.status === 'CANCELLED') throw new BadRequestException('Cannot award a cancelled tender')
+    if ((t as any).winningBidId) throw new BadRequestException('Tender already awarded')
+    // Require tender closed or deadline passed
+    if (t.status !== 'CLOSED' && new Date() < new Date(t.deadline)) {
+      throw new BadRequestException('Tender must be closed (or past deadline) before award')
+    }
+
+    const bid = await this.prisma.bid.findUnique({ where: { id: bidId }, include: { evaluation: true } })
+    if (!bid || bid.tenderId !== id) throw new NotFoundException('Bid not found for this tender')
+
+    // Optional: ensure evaluated before award
+    if (!bid.evaluation) {
+      throw new BadRequestException('Bid must be evaluated before award')
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.tender.update({ where: { id }, data: { winningBidId: bidId, awardedAt: new Date() } as any }),
+      this.prisma.bid.update({ where: { id: bidId }, data: { status: 'AWARDED' } as any }),
+    ])
+
+    return { tenderId: id, winningBidId: bidId }
+  }
+
+  async results(id: string) {
+    // Public: list evaluated bids (score, remarks) and winner flag
+    const t = await this.detail(id)
+    const bids = await this.prisma.bid.findMany({
+      where: { tenderId: id },
+      include: { evaluation: true },
+      orderBy: { createdAt: 'desc' },
+    })
+    return bids
+      .filter((b) => !!b.evaluation)
+      .map((b) => ({
+        bidId: b.id,
+        score: b.evaluation!.score,
+        remarks: b.evaluation!.remarks ?? undefined,
+        isWinner: (t as any).winningBidId ? b.id === (t as any).winningBidId : false,
+      }))
+  }
 }
